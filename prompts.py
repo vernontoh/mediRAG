@@ -38,3 +38,25 @@ Instruction: Use the following pieces of context to answer the question at the e
 
 Give a detailed answer with the help of the provided piece of information.
 [/INST]"""
+
+PROMPT_TEMPLATE_QA_ANSWER = """### [INST] 
+Instruction: Use the following pieces of context to answer the question at the end.
+
+{context}
+
+### QUESTION:
+{question} 
+
+Give a detailed answer with the help of the provided piece of information. Always end with "The Answer is [Yes,No,Maybe]" to answer the question based on the provided information.
+[/INST]""" ## Acc = 0.3 for 10 samples
+
+PROMPT_TEMPLATE_QA_ANSWER_START = """### [INST] 
+Instruction: Use the following pieces of context to answer the question at the end.
+
+{context}
+
+### QUESTION:
+{question} 
+
+Give a detailed answer with the help of the provided piece of information. Always start with "The Answer is [Yes,No,Maybe]" to answer the question based on the provided information.
+[/INST]""" ## Acc = 0.6 for 10 samples
