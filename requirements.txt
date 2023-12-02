@@ -3,3 +3,9 @@ datasets
 evaluate
 transformers
 langchain
+huggingface_hub
+sentence-transformers
+faiss-gpu
+bert_score
+FlagEmbedding
+numpy
