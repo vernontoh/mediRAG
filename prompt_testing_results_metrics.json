@@ -1,4 +1,5 @@
 {
+  "model": "mistralai/Mistral-7B-Instruct-v0.1",
   "simple": {
     "prompt": "input_variables=['context', 'question'] template='Answer the users question based only on the following context:\\n\\n<context>\\n{context}\\n</context>\\n\\nQuestion: {question}\\n'",
     "results": [
