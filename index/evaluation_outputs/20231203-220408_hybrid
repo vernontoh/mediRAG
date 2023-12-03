@@ -1,0 +1,4 @@
+Evaluating with BM25 weight = 1 and BAAI/bge-large-en-v1.5 weight = 0 MAP score: 0.6438888888888888
+Evaluating with BM25 weight = 0.25 and BAAI/bge-large-en-v1.5 weight = 0.75 MAP score: 0.8398888888888891
+Evaluating with BM25 weight = 0.5 and BAAI/bge-large-en-v1.5 weight = 0.5 MAP score: 0.7976666666666666
+Evaluating with BM25 weight = 0.75 and BAAI/bge-large-en-v1.5 weight = 0.25 MAP score: 0.7070555555555557
