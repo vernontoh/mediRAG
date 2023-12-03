@@ -121,3 +121,51 @@ Question: {question}
 
 # Final Answer:
 # """
+# ["vanilla" , "citations" , "retrieval", "rewrite", "stepback"]
+# ["cot" , "base" , "one-shot"]
+COT_SYSTEM = "Think Step by Step and Answer the users question based only on the following context:"
+BASE_SYSTEM = "Answer the users question based only on the following context:"
+EXAMPLES = """
+<example>
+Question:
+Does neurobehavioral disinhibition predict initiation of substance use in children with prenatal cocaine exposure?
+Answer:
+Yes, Prenatal drug exposure appears to be a risk pathway to ND, which by 8/9 years portends substance use initiation.
+</example>
+"""
+CONTEXT = """
+<context>
+{context}
+</context>
+"""
+STEPBACK_CONTEXT = """
+<Background Context>
+{step_back_context}
+</Background Context>
+"""
+END = """
+Question: {question}"""
+STEPBACK_PROMPT = """You are an expert at biomedical knowledge. Your task is to step back and paraphrase a question to a more generic step-back question, which is easier to answer. Only Give one paraphrased question as the output.
+Example:
+"human": "Could the members of The Police perform lawful arrests?",
+"ai": "what can the members of The Police do?",
+Question:
+"human": {question} 
+"ai" :"""
+prompt_templates = {
+    'vanilla' : {
+        "cot": COT_SYSTEM + END,
+        "base": BASE_SYSTEM + END,
+        "one-shot": BASE_SYSTEM + EXAMPLES + END
+    },
+    'retrieval':{
+        "cot": COT_SYSTEM + CONTEXT + END,
+        "base": BASE_SYSTEM + CONTEXT +END,
+        "one-shot": BASE_SYSTEM + EXAMPLES + CONTEXT + END
+    },
+    'stepback':{
+        "cot": COT_SYSTEM + CONTEXT + STEPBACK_CONTEXT + END,
+        "base": BASE_SYSTEM + CONTEXT + STEPBACK_CONTEXT + END,
+        "one-shot": BASE_SYSTEM + EXAMPLES + CONTEXT + STEPBACK_CONTEXT + END
+    }
+}
