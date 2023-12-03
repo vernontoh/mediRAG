@@ -9,3 +9,5 @@ faiss-gpu
 bert_score
 FlagEmbedding
 numpy
+rank_bm25
+protobuf

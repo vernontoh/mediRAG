@@ -3,11 +3,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-/dumps/*
-/models/*
+/dumps
+/models
 /faiss_index_pubmed/*
-/data/*
+/data
 /evaluation_metrics/*
+/index/*
+!/index/evaluation_outputs
+debug.ipynb
 
 # C extensions
 *.so
