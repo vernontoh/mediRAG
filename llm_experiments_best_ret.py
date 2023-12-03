@@ -8,18 +8,22 @@ import evaluate
 import json
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, pipeline
-
 from langchain import hub
 from langchain.docstore.document import Document
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.retrievers import EnsembleRetriever
 from langchain.llms import HuggingFacePipeline
 from langchain.prompts import PromptTemplate
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.chains import LLMChain
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
+from langchain.llms import HuggingFaceHub
+from FlagEmbedding import FlagReranker
+from utils import *
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='A script to evaluate the performance of different LLM prompts and retrieval query approaches')
@@ -34,6 +38,8 @@ def parse_arguments():
 
     parser.add_argument('--save_dir', type=str, default=None)
 
+    parser.add_argument('--hf_token', type=str, default="")
+
     parser.add_argument('-v', '--verbose', action='store_true', 
                         help='Enable verbose mode')
     
@@ -46,9 +52,6 @@ def preprocess(dataset):
             for sentence in contexts:
                 yield Document(page_content=sentence)
 
-# Parser to remove the `**`
-def _parse(text):
-    return text.strip("**")
 
 def find_citations(predictions):
     finalpred = []
@@ -94,7 +97,7 @@ def acc_calc_final(predictions, references):
 
 if __name__ == '__main__':
     args = parse_arguments()
-    print(args)
+    print(args)    
 
     # set cuda device
     if args.verbose:
@@ -106,6 +109,7 @@ if __name__ == '__main__':
     if args.verbose:
         print("Instantiating Model and Tokeniser")
     model_name= 'mistralai/Mistral-7B-Instruct-v0.1'
+
 
     # load tokeniser
     tokenizer = AutoTokenizer.from_pretrained(model_name,   cache_dir="models")
@@ -125,6 +129,12 @@ if __name__ == '__main__':
         cache_dir="models",
         device_map = "auto"
     )
+    os.environ["HUGGINGFACEHUB_API_TOKEN"] = args.hf_token
+    repo_id = "google/flan-t5-xxl"
+
+    llm = HuggingFaceHub(
+        repo_id=repo_id, model_kwargs={"temperature": 0.1, "max_length": 64}
+    )
 
     # Load data
     if args.verbose:
@@ -135,35 +145,66 @@ if __name__ == '__main__':
     # Setting up Faiss Vectorstore
     if args.verbose:
         print("Instantiating Vectorstore")
-    embedding_model = "BAAI/bge-large-en-v1.5"
-    model_kwargs = {'device':'cuda'}
+    embedding_model1 = "pritamdeka/S-PubMedBert-MS-MARCO"
+    embedding_model2 = "BAAI/bge-large-en-v1.5"
+
+    model_kwargs = {'device':'cpu'}
     encode_kwargs = {'normalize_embeddings': False}
 
-    # Initialize an instance of HuggingFaceEmbeddings with the specified parameters
-    embeddings = HuggingFaceEmbeddings(
-        model_name=embedding_model,   
+    embeddings1 = HuggingFaceEmbeddings(
+        model_name=embedding_model1,
         model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs, 
+        encode_kwargs=encode_kwargs,
         cache_folder="models"
     )
 
-    if os.path.exists("faiss_index_pubmed"):
-        db = FAISS.load_local("faiss_index_pubmed", embeddings)
+    if os.path.exists(f"index/pubmedqa_{embedding_model1.split('/')[-1]}_cs{1024}_co{128}"):
+        print("Loading existing FAISS index...")
+        db_pubmed = FAISS.load_local(f"index/pubmedqa_{embedding_model1.split('/')[-1]}_cs{1024}_co{128}", embeddings1)
     else:
+        print("Creating FAISS index...")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
-        docs = text_splitter.split_documents(data)  # 676307
+        docs = text_splitter.split_documents(data) 
+        db_pubmed = FAISS.from_documents(docs, embeddings1)
+        db_pubmed.save_local(f"index/pubmedqa_{embedding_model1.split('/')[-1]}_cs{1024}_co{128}")
 
-        db = FAISS.from_documents(docs, embeddings)
-        db.save_local("faiss_index_pubmed")
 
+    embeddings2 = HuggingFaceEmbeddings(
+        model_name=embedding_model2,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs,
+        cache_folder="models"
+    )
+
+    if os.path.exists(f"index/pubmedqa_{embedding_model2.split('/')[-1]}_cs{1024}_co{128}"):
+        print("Loading existing FAISS index...")
+        db_bge = FAISS.load_local(f"index/pubmedqa_{embedding_model2.split('/')[-1]}_cs{1024}_co{128}", embeddings2)
+    else:
+        print("Creating FAISS index...")
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=128)
+        docs = text_splitter.split_documents(data) 
+        db_bge = FAISS.from_documents(docs, embeddings2)
+        db_bge.save_local(f"index/pubmedqa_{embedding_model2.split('/')[-1]}_cs{1024}_co{128}")
+
+    pubmed_retriever = db_pubmed.as_retriever(search_kwargs={"k": 10}) 
+    bge_retriever = db_bge.as_retriever(search_kwargs={"k": 10})
+    
     # Initialising Retriever
     if args.verbose:
         print("Instantiating Retriever")
-        
-    retriever = db.as_retriever(
-        search_type="similarity",
-        search_kwargs={'k': 3}
-    )
+    ensemble_retriever = EnsembleRetriever(
+                    retrievers=[pubmed_retriever, bge_retriever], weights=[0.75,0.25]
+                )
+    reranker = FlagReranker('BAAI/bge-reranker-large')
+    
+
+    def retriever(question):
+        expanded_question = query_expansion(llm, question, type_prompt=2)
+        retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
+        retrieved_docs = retrieved_docs[:15]
+        retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
+        retrieved_docs = retrieved_docs[:5]
+        return retrieved_docs
 
     # Loading Questions and Ground truth Answers
     questions = dataset['train'][2:2+args.n_samples]["QUESTION"]
@@ -211,7 +252,7 @@ if __name__ == '__main__':
             | mistral_llm
             | StrOutputParser()
         )
-        
+
     else:
         stepback_prompt = PromptTemplate(
             input_variables=["question"],
@@ -257,7 +298,7 @@ if __name__ == '__main__':
         predicitons = clean_cit(predictions)
 
     # Evaluation
-    del model, text_generation_pipeline, mistral_llm, chain, retriever, db
+    del model, text_generation_pipeline, mistral_llm, chain, retriever
     gc.collect()
     torch.cuda.empty_cache()
     # BLEU

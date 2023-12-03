@@ -1,0 +1,39 @@
+{
+  "model": "mistralai/Mistral-7B-Instruct-v0.1",
+  "prompt": "Answer the users question based only on the following context:\n<context>\n{context}\n</context>\n\nQuestion: {question}",
+  "results": [
+    "\n\nAnswer: Yes, heart failure with preserved ejection fraction is characterized by dynamic impairment of active relaxation and contraction of the left ventricle on exercise and associated with myocardial energy deficiency."
+  ],
+  "metrics": {
+    "BertScore": {
+      "precision": 0.8663773536682129,
+      "recall": 0.8783165216445923,
+      "f1": 0.8723061084747314,
+      "hashcode": "roberta-large_L17_no-idf_version=0.3.12(hug_trans=4.35.2)"
+    },
+    "BLEU": {
+      "bleu": 0.0,
+      "precisions": [
+        0.24242424242424243,
+        0.0625,
+        0.03225806451612903,
+        0.0
+      ],
+      "brevity_penalty": 1.0,
+      "length_ratio": 1.375,
+      "translation_length": 33,
+      "reference_length": 24
+    },
+    "Accuracy": 1.0,
+    "Perplexity": 65.91326904296875,
+    "Meteor": 0.21366716867469876
+  },
+  "ground_truth": {
+    "long_answers": [
+      "Patients with HFpEF have reduced cardiac energetic reserve that may underlie marked dynamic slowing of LV active relaxation and abnormal VVC during exercise."
+    ],
+    "final_decisions": [
+      "yes"
+    ]
+  }
+}
