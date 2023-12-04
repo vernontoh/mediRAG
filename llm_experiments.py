@@ -116,7 +116,7 @@ def main():
             
         retriever = db.as_retriever(
             search_type="similarity",
-            search_kwargs={'k': 3}
+            search_kwargs={'k': 5}
         )
 
         # Loading Questions and Ground truth Answers
