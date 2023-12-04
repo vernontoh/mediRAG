@@ -253,7 +253,7 @@ def main():
         reranker = FlagReranker('BAAI/bge-reranker-large')
         
         def retriever(question):
-            expanded_question = query_expansion(llm, question, type_prompt=2, wiki=False)
+            expanded_question = query_expansion(llm, question, type="prompt")
             retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
             retrieved_docs = retrieved_docs[:15]
             retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
@@ -337,11 +337,16 @@ def main():
         print("Generating Outputs")
     results = []
     for query in tqdm(questions):    
-        if args.retrieval_type == "best":
-            time.sleep(10)
         if args.verbose:
             print(f"Question: {query}")
-        result = chain.invoke(query)
+        while True:
+            try:
+                result = chain.invoke(query)
+                break
+            except Exception as error:
+                print(error)
+                time.sleep(30)
+
         if args.verbose:
             print(f"Generated Output: {result}")
         results.append(result)
