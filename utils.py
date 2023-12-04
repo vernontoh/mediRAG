@@ -1,5 +1,6 @@
 import wikipedia
 import numpy as np
+from pymed import PubMed
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.docstore.document import Document
@@ -120,26 +121,48 @@ def rerank_topk(reranker, question, documents):
     return result_new
 
 
-def query_expansion(llm, question, type_prompt, wiki):
-    if type_prompt == 1:
-        template = """Explain the biomedical terms and concepts in the following question:\n{question}\n\nAnswer: """
-
-    elif type_prompt == 2:
+def query_expansion(llm, question, type):
+    if type == "prompt":
         template = """Explain the biomedical terms and concepts in the following question:\n{question}\n\nAnswer: Let’s think step by step."""
 
-    prompt = PromptTemplate(template=template, input_variables=["question"])
+        prompt = PromptTemplate(template=template, input_variables=["question"])
 
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
-    explanation = llm_chain.run(question)
-    
-    if wiki:
-        try:
-            summary = wikipedia.summary(explanation, sentences=1)
-            return question + explanation + summary
-        except:
-            return question + explanation
-    else:
+        llm_chain = LLMChain(prompt=prompt, llm=llm)
+        explanation = llm_chain.run(question)
         return question + explanation
+    
+    elif type == "wikipedia":
+        template = """Question: Extract the most important biomedical term in the following question: {question}.
+
+        Answer: """
+
+        prompt = PromptTemplate(template=template, input_variables=["question"])
+
+        llm_chain = LLMChain(prompt=prompt, llm=llm)
+        extraction = llm_chain.run(question)
+
+        try:
+            summary = wikipedia.summary(extraction, sentences=1)
+            res = question+summary
+        except:
+            res = question
+        return res
+    
+    elif type == "pubmed":
+        pubmed = PubMed(tool="MyTool", email="leepeixuan133@gmail.com")
+        expanded = question
+        try:
+            results = pubmed.query(question, max_results=2)
+            titles = ""
+            for article in results:
+                titles += " " + article.title 
+            expanded += titles
+        except:
+            expanded += ""
+        return expanded
+
+
+
 
 def preprocess(dataset):
     for split in dataset.keys():

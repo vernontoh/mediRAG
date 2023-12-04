@@ -531,33 +531,38 @@ def main():
 
             reranker = FlagReranker('BAAI/bge-reranker-large')
 
-            for type_prompt in [1, 2]:
-                for wiki in [True, False]:
-                    f.write(f'Query Expansion with flan-t5-xxl with type prompt {type_prompt} and wiki {wiki} | ')
-                    all_relevance = []
-                    for i in tqdm(range(len(val_questions))): # for each validation query
-                        time.sleep(5)
-                        question = val_questions[i]
-                        expanded_question = query_expansion(llm, question, type_prompt=type_prompt, wiki=wiki)
-                        retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
-                        retrieved_docs = retrieved_docs[:15]
-                        retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
-                        retrieved_docs = retrieved_docs[:5]
+            for type in ["wikipedia", "pubmed"]:   #"prompt", 
+                f.write(f'Query Expansion using {type} | ')
+                all_relevance = []
+                for i in tqdm(range(len(val_questions))): # for each validation query
+                    time.sleep(5)
+                    question = val_questions[i]
+                    while True:
+                        try:
+                            expanded_question = query_expansion(llm, question, type=type)
+                            break
+                        except Exception as error:
+                            print(error)
+                            time.sleep(30)
+                    retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
+                    retrieved_docs = retrieved_docs[:15]
+                    retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
+                    retrieved_docs = retrieved_docs[:5]
 
-                        # label the retrieved list of doc as relevant or not
-                        bin_relevance = []
-                        for d in retrieved_docs:
-                            gt_chunks = question2chunk[question]
-                            if d in gt_chunks:
-                                bin_relevance.append(1)
-                            else:
-                                bin_relevance.append(0)
-                        all_relevance.append(bin_relevance)
+                    # label the retrieved list of doc as relevant or not
+                    bin_relevance = []
+                    for d in retrieved_docs:
+                        gt_chunks = question2chunk[question]
+                        if d in gt_chunks:
+                            bin_relevance.append(1)
+                        else:
+                            bin_relevance.append(0)
+                    all_relevance.append(bin_relevance)
 
-                    # f.write(f'{all_relevance}')
-                    score = mean_average_precision(all_relevance)
-                    f.write(f'MAP score: {score}\n')
-                    f.flush()
+                # f.write(f'{all_relevance}')
+                score = mean_average_precision(all_relevance)
+                f.write(f'MAP score: {score}\n')
+                f.flush()
 
 
 if __name__ == '__main__':
