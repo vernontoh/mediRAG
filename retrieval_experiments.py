@@ -21,7 +21,7 @@ def parse_args():
 
     parser.add_argument(
         '--task', type=str, required=True, 
-        help="Evaluation Task. chunk, multi_dense, hybrid, rerank, query_expand"
+        help="Evaluation Task. chunk, single, multi_dense, hybrid, rerank, query_expand"
     )
     parser.add_argument(
         '--chunk_size', type=int, default=1024, 
@@ -53,7 +53,72 @@ def main():
 
     out_path = f'evaluation_outputs/{time.strftime("%Y%m%d-%H%M%S")}_{args.task}'
 
-    if args.task == "single":
+    if args.task == "chunk":
+        print("#" * 80)
+        print("Running Experiment: chunk")
+        print("#" * 80)
+
+        embedding_model = "BAAI/bge-large-en-v1.5"
+        model_kwargs = {'device':'cuda'}
+        encode_kwargs = {'normalize_embeddings': False}
+
+        embeddings = HuggingFaceEmbeddings(
+            model_name=embedding_model,   
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs, 
+            cache_folder="models"
+        )
+
+        for chunk_size_overlap in [(512, 64), (1024, 128)]:
+            chunk_size, chunk_overlap = chunk_size_overlap
+
+            print("Creating dict mapping question to chunks...")
+            question2chunk = create_question2chunk(
+                val_questions, 
+                val_contexts, 
+                chunk_size=chunk_size, 
+                chunk_overlap=chunk_overlap
+                )
+
+            if os.path.exists(f"index/pubmedqa_{embedding_model.split('/')[-1]}_cs{chunk_size}_co{chunk_overlap}"):
+                print("Loading existing FAISS index...")
+                db = FAISS.load_local(f"index/pubmedqa_{embedding_model.split('/')[-1]}_cs{chunk_size}_co{chunk_overlap}", embeddings)
+            else:
+                print("Creating FAISS index...")
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                docs = text_splitter.split_documents(data) 
+                db = FAISS.from_documents(docs, embeddings)
+                db.save_local(f"index/pubmedqa_{embedding_model.split('/')[-1]}_cs{chunk_size}_co{chunk_overlap}")
+
+            retriever = db.as_retriever(search_type="similarity", search_kwargs={'k': 5})
+
+            print("Starting Experiment...")
+            with open(out_path, 'a+') as f:
+                f.write(f'{embedding_model} chunk size {chunk_size} chunk overlap {chunk_overlap} | ')
+                
+                all_relevance = []
+                for i in tqdm(range(len(val_questions))): # for each validation query
+                    question = val_questions[i]
+                    retrieved_docs = retriever.get_relevant_documents(question)
+                    retrieved_docs = retrieved_docs[:5]
+
+                    # label the retrieved list of doc as relevant or not
+                    bin_relevance = []
+                    for d in retrieved_docs:
+                        gt_chunks = question2chunk[question]
+                        if d in gt_chunks:
+                            bin_relevance.append(1)
+                        else:
+                            bin_relevance.append(0)
+                    all_relevance.append(bin_relevance)
+                    
+                # f.write(f'{all_relevance}')
+                score = mean_average_precision(all_relevance)
+                f.write(f'MAP score: {score}\n')
+                f.flush()
+        
+
+    elif args.task == "single":
         print("#" * 80)
         print("Running Experiment: single")
         print(f"Chunk size = {args.chunk_size}")

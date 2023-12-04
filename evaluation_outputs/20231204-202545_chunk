@@ -1,0 +1,2 @@
+BAAI/bge-large-en-v1.5 chunk size 512 chunk overlap 64 | MAP score: 0.8297222222222221
+BAAI/bge-large-en-v1.5 chunk size 1024 chunk overlap 128 | MAP score: 0.8476666666666668

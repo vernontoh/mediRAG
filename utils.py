@@ -141,3 +141,54 @@ def query_expansion(llm, question, type_prompt, wiki):
     else:
         return question + explanation
 
+def preprocess(dataset):
+    for split in dataset.keys():
+        for contexts in dataset[split]["CONTEXTS"]:
+            for sentence in contexts:
+                yield Document(page_content=sentence)
+
+# Parser to remove the `**`
+def _parse(text):
+    return text.strip("**")
+
+def find_citations(predictions, db):
+    finalpred = []
+    for output in predictions:
+        output_with_citations = ""
+        citations = ""
+        citation_list = []
+
+        for lines in output.split("\n"):
+            lines = lines.strip()
+            if len(lines.split(" ")) > 10:
+                for line in lines.split("."):
+                    line = line.strip()
+                    docs_and_scores = db.similarity_search_with_score(line)[0]  # choosing top 1 relevant document
+                    if docs_and_scores[1] < 0.5:  # returned distance score is L2 distance, a lower score is better
+                        doc_content = docs_and_scores[0].page_content
+                        if doc_content in citation_list:
+                            idx = citation_list.index(doc_content)
+
+                        else:
+                            citation_list.append(doc_content)
+                            idx = len(citation_list)
+                            citations += f"[{idx}] {doc_content}\n"
+
+                        output_with_citations += line + f" [{idx}]. "
+
+        final_output_with_citations = output_with_citations + "\n\nCitations:\n" + citations
+        finalpred.append(final_output_with_citations)
+    return finalpred
+
+def clean_cit(preds):
+    new_pred = []
+    for pred in preds:
+        new_pred.append(pred.split("\n\nCitations:\n")[0])
+    return new_pred
+
+def acc_calc_final(predictions, references):
+    acc = 0
+    for i in range(len(predictions)):
+        if references[i].lower() in predictions[i][:15].lower():
+            acc += 1
+    return acc / len(predictions)
