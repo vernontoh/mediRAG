@@ -1,0 +1,10 @@
+Evaluating with BM25 weight = 1 and BAAI/bge-large-en-v1.5 weight = 0 MAP score: 0.6438888888888888
+Evaluating with BM25 weight = 0.25 and BAAI/bge-large-en-v1.5 weight = 0.75 MAP score: 0.8398888888888891
+Evaluating with BM25 weight = 0.5 and BAAI/bge-large-en-v1.5 weight = 0.5 MAP score: 0.7976666666666666
+Evaluating with BM25 weight = 0.75 and BAAI/bge-large-en-v1.5 weight = 0.25 MAP score: 0.7070555555555557
+Evaluating with BM25 weight = 0 and BAAI/bge-large-en-v1.5 weight = 1 MAP score: 0.8476666666666668
+Evaluating with BM25 weight = 1 and pritamdeka/S-PubMedBert-MS-MARCO weight = 0 MAP score: 0.6438888888888888
+Evaluating with BM25 weight = 0.25 and pritamdeka/S-PubMedBert-MS-MARCO weight = 0.75 MAP score: 0.8397777777777777
+Evaluating with BM25 weight = 0.5 and pritamdeka/S-PubMedBert-MS-MARCO weight = 0.5 MAP score: 0.8314166666666668
+Evaluating with BM25 weight = 0.75 and pritamdeka/S-PubMedBert-MS-MARCO weight = 0.25 MAP score: 0.7348333333333334
+Evaluating with BM25 weight = 0 and pritamdeka/S-PubMedBert-MS-MARCO weight = 1 MAP score: 0.8435555555555556

@@ -11,3 +11,5 @@ FlagEmbedding
 numpy
 rank_bm25
 protobuf
+wikipedia
+bitsandbytes

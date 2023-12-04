@@ -141,12 +141,12 @@ STEPBACK_CONTEXT = """
 """
 END = """
 Question: {question}"""
-STEPBACK_PROMPT = """You are an expert at biomedical knowledge. Your task is to step back and paraphrase a question to a more generic step-back question, which is easier to answer. Only Give one paraphrased question as the output.
-Example:
-"human": "Could the members of The Police perform lawful arrests?",
-"ai": "what can the members of The Police do?",
-Question:
-"human": {question} 
+STEPBACK_PROMPT = """You are an expert at biomedical knowledge. Your task is to step back and paraphrase a question to a more generic step-back question, which is easier to answer. Only Give one paraphrased question as the output. 
+Example: 
+"human": "Do posterior fossa and spinal gangliogliomas form two distinct clinicopathologic and molecular subgroups?", 
+"ai": "What distinguishable molecular characteristics are associated with spinal gangliogliomas?", 
+Question: 
+"human": {question}  
 "ai" :"""
 prompt_templates = {
     'vanilla' : {
