@@ -8,8 +8,7 @@ __pycache__/
 /faiss_index_pubmed/*
 /data
 /evaluation_metrics/*
-/index/*
-!/index/evaluation_outputs
+/index
 debug.ipynb
 
 # C extensions

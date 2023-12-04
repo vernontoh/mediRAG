@@ -1,20 +1,18 @@
 import os
-import torch
-from tqdm import tqdm as tqdm
-from datetime import datetime
-import argparse
 import time
+import torch
+import argparse
+from utils import *
+from tqdm import tqdm as tqdm
 
 from datasets import load_dataset
+from FlagEmbedding import FlagReranker
 from langchain.vectorstores import FAISS
+from langchain.llms import HuggingFaceHub
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from utils import *
-from FlagEmbedding import FlagReranker
-from langchain.llms import HuggingFaceHub
-
 
 
 
@@ -25,7 +23,6 @@ def parse_args():
         '--task', type=str, required=True, 
         help="Evaluation Task. chunk, multi_dense, hybrid, rerank, query_expand"
     )
-
     parser.add_argument(
         '--chunk_size', type=int, default=1024, 
         help="Document chunk size"
@@ -54,7 +51,7 @@ def main():
     val_contexts = val_dataset["CONTEXTS"][:100]
     val_questions = val_dataset["QUESTION"][:100]
 
-    out_path = f'index/evaluation_outputs/{time.strftime("%Y%m%d-%H%M%S")}_{args.task}'
+    out_path = f'evaluation_outputs/{time.strftime("%Y%m%d-%H%M%S")}_{args.task}'
 
     if args.task == "single":
         print("#" * 80)
@@ -101,7 +98,7 @@ def main():
 
             print("Starting Experiment...")
             with open(out_path, 'a+') as f:
-                f.write(f'{embedding_model} ')
+                f.write(f'{embedding_model} | ')
                 
                 all_relevance = []
                 for i in tqdm(range(len(val_questions))): # for each validation query
@@ -190,7 +187,7 @@ def main():
         with open(out_path, 'a+') as f:
             for w in weight_configs:
                 print(f"Evaluating with S-PubMedBert-MS-MARCO weight = {w[0]} and bge-large-en-v1.5 weight = {w[-1]}")
-                f.write(f'Evaluating with S-PubMedBert-MS-MARCO weight = {w[0]} and bge-large-en-v1.5 weight = {w[-1]} ')
+                f.write(f'Evaluating with S-PubMedBert-MS-MARCO weight = {w[0]} and bge-large-en-v1.5 weight = {w[-1]} | ')
 
                 # initialize the ensemble retriever
                 ensemble_retriever = EnsembleRetriever(
@@ -272,7 +269,7 @@ def main():
             with open(out_path, 'a+') as f:
                 for w in weight_configs:
                     print(f"Evaluating with BM25 weight = {w[0]} and {embedding_model} weight = {w[-1]}")
-                    f.write(f"Evaluating with BM25 weight = {w[0]} and {embedding_model} weight = {w[-1]} ")
+                    f.write(f"Evaluating with BM25 weight = {w[0]} and {embedding_model} weight = {w[-1]} | ")
 
                     # initialize the ensemble retriever
                     ensemble_retriever = EnsembleRetriever(
@@ -370,7 +367,7 @@ def main():
             reranker = FlagReranker('BAAI/bge-reranker-large')
 
             for topk in [5, 10, 15]:
-                f.write(f"Reranking {topk} documents using bge-reranker-large ")
+                f.write(f"Reranking {topk} documents using bge-reranker-large | ")
                 all_relevance = []
                 for i in tqdm(range(len(val_questions))): # for each validation query
                     question = val_questions[i]
@@ -464,37 +461,38 @@ def main():
             os.environ["HUGGINGFACEHUB_API_TOKEN"] = args.hf_token
             repo_id = "google/flan-t5-xxl"
             llm = HuggingFaceHub(
-                repo_id=repo_id, model_kwargs={"temperature": 0.5, "max_length": 64}
+                repo_id=repo_id, model_kwargs={"temperature": 0.1, "max_length": 256}
             )
 
             reranker = FlagReranker('BAAI/bge-reranker-large')
 
             for type_prompt in [1, 2]:
-                f.write(f'Query Expansion with flan-t5-xxl with type prompt {type_prompt} ')
-                all_relevance = []
-                for i in tqdm(range(len(val_questions))): # for each validation query
-                    time.sleep(5)
-                    question = val_questions[i]
-                    expanded_question = query_expansion(llm, question, type_prompt=type_prompt)
-                    retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
-                    retrieved_docs = retrieved_docs[:15]
-                    retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
-                    retrieved_docs = retrieved_docs[:5]
+                for wiki in [True, False]:
+                    f.write(f'Query Expansion with flan-t5-xxl with type prompt {type_prompt} and wiki {wiki} | ')
+                    all_relevance = []
+                    for i in tqdm(range(len(val_questions))): # for each validation query
+                        time.sleep(5)
+                        question = val_questions[i]
+                        expanded_question = query_expansion(llm, question, type_prompt=type_prompt, wiki=wiki)
+                        retrieved_docs = ensemble_retriever.get_relevant_documents(expanded_question)
+                        retrieved_docs = retrieved_docs[:15]
+                        retrieved_docs = rerank_topk(reranker, question, retrieved_docs)
+                        retrieved_docs = retrieved_docs[:5]
 
-                    # label the retrieved list of doc as relevant or not
-                    bin_relevance = []
-                    for d in retrieved_docs:
-                        gt_chunks = question2chunk[question]
-                        if d in gt_chunks:
-                            bin_relevance.append(1)
-                        else:
-                            bin_relevance.append(0)
-                    all_relevance.append(bin_relevance)
+                        # label the retrieved list of doc as relevant or not
+                        bin_relevance = []
+                        for d in retrieved_docs:
+                            gt_chunks = question2chunk[question]
+                            if d in gt_chunks:
+                                bin_relevance.append(1)
+                            else:
+                                bin_relevance.append(0)
+                        all_relevance.append(bin_relevance)
 
-                # f.write(f'{all_relevance}')
-                score = mean_average_precision(all_relevance)
-                f.write(f'MAP score: {score}\n')
-                f.flush()
+                    # f.write(f'{all_relevance}')
+                    score = mean_average_precision(all_relevance)
+                    f.write(f'MAP score: {score}\n')
+                    f.flush()
 
 
 if __name__ == '__main__':

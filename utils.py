@@ -1,8 +1,9 @@
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
+import wikipedia
 import numpy as np
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 def preprocess(dataset):
@@ -119,7 +120,7 @@ def rerank_topk(reranker, question, documents):
     return result_new
 
 
-def query_expansion(llm, question, type_prompt):
+def query_expansion(llm, question, type_prompt, wiki):
     if type_prompt == 1:
         template = """Explain the biomedical terms and concepts in the following question:\n{question}\n\nAnswer: """
 
@@ -130,4 +131,13 @@ def query_expansion(llm, question, type_prompt):
 
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     explanation = llm_chain.run(question)
-    return question + explanation
+    
+    if wiki:
+        try:
+            summary = wikipedia.summary(explanation, sentences=1)
+            return question + explanation + summary
+        except:
+            return question + explanation
+    else:
+        return question + explanation
+

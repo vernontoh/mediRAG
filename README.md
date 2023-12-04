@@ -6,33 +6,32 @@
 pip install -r requirements.txt
 ```
 
-## Run Evaluations
+## Retrieval Evaluations
 
-### Experiment 1 (Comparision between BGE Embedding and PubMed Bert Embedding)
+### Experiment 1 (Dense Embedding)
 ```bash
 python retrieval_experiments.py --task single
 ```
 
-### Experiment 2 (Using 2 Dense embeddings and tuning the weightage)
+### Experiment 2 (Dense Ensemble)
 ```bash
 python retrieval_experiments.py --task multi_dense
 ```
 
-### Experiment 3 (Using BM25 and Dense Embeddings and tuning the weightage)
+### Experiment 3 (Hybrid Ensemble)
 ```bash
 python retrieval_experiments.py --task hybrid
 ```
 
-### Experiment 4 (Using 2 Dense Embeddings and tuning the topk for reranking)
+### Experiment 4 (Reranking)
 ```bash
 python retrieval_experiments.py --task rerank 
 ```
 
-### Experiment 5 (Using 2 Dense Embeddings and refining prompts for Query Expansion)
+### Experiment 5 (Query Expansion)
 ```bash
 python retrieval_experiments.py --task query_expand --hf_token <HF Token>
 ```
-
 ### LLM Experiments base
 ```bash
 python llm_experiments_best_ret.py --hf_token <HF Token>  --n_samples 100 --approach vanilla --prompt_type base --save_dir eval

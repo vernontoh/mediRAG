@@ -1,0 +1,4 @@
+Query Expansion with flan-t5-xxl with type prompt 1 and wiki True | MAP score: 0.8795555555555558
+Query Expansion with flan-t5-xxl with type prompt 1 and wiki False | MAP score: 0.8833055555555557
+Query Expansion with flan-t5-xxl with type prompt 2 and wiki True | MAP score: 0.8798333333333334
+Query Expansion with flan-t5-xxl with type prompt 2 and wiki False | 
