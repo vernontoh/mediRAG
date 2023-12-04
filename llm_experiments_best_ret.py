@@ -345,7 +345,7 @@ if __name__ == '__main__':
             print(f"Saving Results to {filename}")
         
         data = {"model": model_name,
-                "prompt": prompt_templates[args.approach][args.prompt_type],
+                # "prompt": prompt_templates[args.approach][args.prompt_type],
                 'results': results, 'metrics': {'BertScore': bert_score, 'BLEU': bleu_score, "Accuracy": accuracy,  "Perplexity":perplexity_score['mean_perplexity'], "Meteor": meteor_score['meteor']},  #
                 "ground_truth": {"long_answers": long_answers, "final_decisions": final_decisions}}
 

@@ -32,3 +32,14 @@ python retrieval_experiments.py --task rerank
 ```bash
 python retrieval_experiments.py --task query_expand --hf_token <HF Token>
 ```
+
+### LLM Experiments base
+```bash
+python llm_experiments_best_ret.py --hf_token <HF Token>  --n_samples 100 --hf_token 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 --approach vanilla --prompt_type base --save_dir eval
+```
+you can run the experiments for other approaches {"vanilla" , "citations" , "retrieval", "stepback"} by replacing the argument to the --approach and other prompt {"cot" , "base" , "one-shot"} by replacing the --prompt_type argument.
+
+### LLM Experiment with Retrieval and Using Chain-of-Thought prompting
+```bash
+python llm_experiments_best_ret.py --hf_token <HF Token>  --n_samples 100 --hf_token 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 --approach retrieval --prompt_type cot --save_dir eval
+```
