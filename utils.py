@@ -190,7 +190,7 @@ def find_citations(predictions, db):
                     if docs_and_scores[1] < 0.5:  # returned distance score is L2 distance, a lower score is better
                         doc_content = docs_and_scores[0].page_content
                         if doc_content in citation_list:
-                            idx = citation_list.index(doc_content)
+                            idx = citation_list.index(doc_content) + 1
 
                         else:
                             citation_list.append(doc_content)

@@ -1,0 +1,20 @@
+{
+  "base_vanilla-base": 0.72786,
+  "base_vanilla-cot": 0.74386,
+  "base_vanilla-one-shot": 0.79615,
+  "base_citations-base": 0.72786,
+  "base_citations-cot": 0.74386,
+  "base_citations-one-shot": 0.78132,
+  "base_retrieval-base": 0.78132,
+  "base_retrieval-cot": 0.75111,
+  "base_retrieval-one-shot": 0.84732,
+  "base_stepback-base": 0.80351,
+  "base_stepback-cot": 0.78243,
+  "base_stepback-one-shot": 0.82545,
+  "best_retrieval-base": 0.80883,
+  "best_retrieval-cot": 0.76632,
+  "best_retrieval-one-shot": 0.82042,
+  "best_stepback-base": 0.83753,
+  "best_stepback-cot": 0.78875,
+  "best_stepback-one-shot": 0.82042
+}
