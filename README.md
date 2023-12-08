@@ -71,4 +71,14 @@ python llm_experiments.py \
 --prompt_type: ["base", "cot", "one-shot"]  
 ```
 
+## Running the UI Demo
+### Setting up Hugging Face Token  
+```python
+### config.py
+HF_TOKEN = None # replace with your <HF Token>
+```
 
+### Running Demo
+```bash
+python app.py
+``` 
